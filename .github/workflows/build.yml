@@ -13,47 +13,25 @@ jobs:
         arch: [aarch64, arm, armhf, i686, loongarch64, mips64el, mipsel, ppc, ppc64, ppc64le, riscv64, x86_64]
       
     runs-on: ubuntu-latest
+    env:
+      ARCH: ${{ matrix.arch }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
       
       - name: Download toolchains
         run: |
-          case "${{ matrix.arch }}" in
-            "arm")
-              echo "TOOLCHAIN_NAME=arm-linux-musleabi-cross" >> $GITHUB_ENV
-              ;;
-            "armhf")
-              echo "TOOLCHAIN_NAME=arm-linux-musleabihf-cross" >> $GITHUB_ENV
-              ;;
-            "x86_64")
-              echo "TOOLCHAIN_NAME=x86_64-linux-musl-native" >> $GITHUB_ENV
-              ;;
-            "loongarch64")
-              echo "TOOLCHAIN_NAME=loongarch64-unknown-linux-musl" >> $GITHUB_ENV
-              ;;
-            *)
-              echo "TOOLCHAIN_NAME=${{ matrix.arch }}-linux-musl-cross" >> $GITHUB_ENV
-              ;;
-          esac
-          if [ "${{ matrix.arch }}" = loongarch64 ]; then
-            wget -q https://github.com/musl-cross/musl-cross/releases/download/20240603/${TOOLCHAIN_NAME}.tgz
-          else
-            wget -q https://musl.cc/${TOOLCHAIN_NAME}.tgz
-          fi
-          sudo mkdir /opt/toolchains
-          sudo tar -zxf ${TOOLCHAIN_NAME}.tgz -C /opt/toolchains
-          rm ${TOOLCHAIN_FILE}
+          bash .github/download.sh
 
       - name: Install libprotobuf-c
         run: |
           export PLATFORM=$(echo $TOOLCHAIN_NAME | sed 's/-\(native\|cross\)//')
           wget https://github.com/protobuf-c/protobuf-c/releases/download/v1.5.0/protobuf-c-1.5.0.tar.gz
           tar -zxf protobuf-c-1.5.0.tar.gz
-          cd ./protobuf-c
+          cd ./protobuf-c-1.5.0
           ./configure --disable-shared --enable-static --disable-protoc --disable-largefile --prefix=/opt/toolchains/${TOOLCHAIN_NAME} --host=${PLATFORM}
           make -j${nproc}
-          sudo make install
+          sudo PATH=$PATH make install
       
       - name: Build collector
         run: |
