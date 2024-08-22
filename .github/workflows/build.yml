@@ -10,15 +10,29 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        arch: [aarch64, arm, armhf, i686, loongarch64, mips64el, mipsel, ppc, ppc64, ppc64le, riscv64, x86_64]
-      
+        arch:
+          [
+            aarch64,
+            arm,
+            armhf,
+            i686,
+            loongarch64,
+            mips64el,
+            mipsel,
+            ppc,
+            ppc64,
+            ppc64le,
+            riscv64,
+            x86_64,
+          ]
+
     runs-on: ubuntu-latest
     env:
       ARCH: ${{ matrix.arch }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      
+
       - name: Download toolchains
         run: |
           bash .github/download.sh
@@ -32,17 +46,19 @@ jobs:
           ./configure --disable-shared --enable-static --disable-protoc --disable-largefile --prefix=/opt/toolchains/${TOOLCHAIN_NAME} --host=${PLATFORM}
           make -j${nproc}
           sudo PATH=$PATH make install
-      
+
       - name: Build collector
         run: |
           git clone https://git.kuzu.uk/nz-collector.git/
           cd nz-collector
-          echo "VERSION=$(git describe --tags `git rev-list --tags --max-count=1`)" >> $GITHUB_ENV
+          export VERSION=$(git describe --tags `git rev-list --tags --max-count=1`)
+          echo "VERSION=${VERSION}" >> $GITHUB_ENV
+          printf "%s" "$(git for-each-ref refs/tags/${VERSION} --format='%(contents)')" > body.txt
           mkdir build && cd build
           cmake -DCMAKE_TOOLCHAIN_FILE=../../cmake/${{ matrix.arch }}_musl.cmake -DENABLE_STATIC=1 ..
           make
           mv collector collector_${{ matrix.arch }}
-      
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
@@ -53,9 +69,19 @@ jobs:
       - name: Upload assets to release
         uses: softprops/action-gh-release@v2
         with:
+          body_path: ./nz-collector/body.txt
           tag_name: ${{ env.VERSION }}
           files: |
             ./nz-collector/build/collector_${{ matrix.arch }}
 
-
-          
+      - name: Release to Codeberg
+        uses: akkuman/gitea-release-action@v1
+        with:
+          name: ${{ env.VERSION }}
+          body_path: ./nz-collector/body.txt
+          server_url: https://codeberg.org
+          repository: uubulb/nz-collector
+          tag_name: ${{ env.VERSION }}
+          token: ${{ secrets.GITEA_TOKEN }}
+          files: |
+            ./nz-collector/build/collector_${{ matrix.arch }}
