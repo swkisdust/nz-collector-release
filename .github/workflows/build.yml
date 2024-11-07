@@ -33,6 +33,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Restore cache
+        id: cache-restore
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            /opt/toolchains
+          key: ${{ runner.os }}-cagent-${{ matrix.arch }}
+
       - name: Download toolchains
         run: |
           bash .github/download.sh
@@ -85,3 +93,12 @@ jobs:
           token: ${{ secrets.GITEA_TOKEN }}
           files: |
             ./nz-collector/build/collector_${{ matrix.arch }}
+
+      - name: Save toolchains
+        if: always()
+        id: cache-save
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            /opt/toolchains
+          key: ${{ steps.cache-restore.outputs.cache-primary-key }}

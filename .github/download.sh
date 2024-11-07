@@ -28,6 +28,10 @@ case "$ARCH" in
 esac
 echo "TOOLCHAIN_NAME=$TOOLCHAIN_NAME" >> $GITHUB_ENV
 
+if [ -d "/opt/toolchains/${TOOLCHAIN_NAME}" ]; then
+  return
+fi
+
 if [ "$ARCH" = loongarch64 ]; then
     wget https://github.com/musl-cross/musl-cross/releases/download/20240603/${TOOLCHAIN_NAME}.tgz
 else
