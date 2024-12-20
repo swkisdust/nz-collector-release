@@ -57,7 +57,7 @@ jobs:
 
       - name: Build collector
         run: |
-          git clone https://git.kuzu.uk/nz-collector.git/
+          git clone https://codeberg.org/uubulb/nz-collector
           cd nz-collector
           export VERSION=$(git describe --tags `git rev-list --tags --max-count=1`)
           echo "VERSION=${VERSION}" >> $GITHUB_ENV

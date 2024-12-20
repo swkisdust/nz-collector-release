@@ -1,5 +1,5 @@
 # nz-collector-release
-Static prebuilt binaries for [nz-collector](https://git.kuzu.uk/nz-collector.git/)
+Static prebuilt binaries for [nz-collector](https://codeberg.org/uubulb/nz-collector)
 
 Toolchains:
 - https://musl.cc/
